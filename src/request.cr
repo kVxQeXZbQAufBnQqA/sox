@@ -19,12 +19,15 @@ class Sox::Request
       when Socket::Family::INET6
         @buffer = Bytes.new(22)
         @buffer[3] = ADDR_TYPE::IPV6.value
+
+        addr6 = ip_address.@addr.as(LibC::In6Addr)
+
         {% if flag?(:darwin) || flag?(:openbsd) || flag?(:freebsd) %}
-          ip_address.@addr6.not_nil!.__u6_addr.__u6_addr8.to_slice.copy_to @buffer[4, 16]
+          addr6.not_nil!.__u6_addr.__u6_addr8.to_slice.copy_to @buffer[4, 16]
         {% elsif flag?(:linux) && flag?(:musl) %}
-          ip_address.@addr6.not_nil!.__in6_union.__s6_addr.to_slice.copy_to @buffer[4, 16]
+          addr6.not_nil!.__in6_union.__s6_addr.to_slice.copy_to @buffer[4, 16]
         {% elsif flag?(:linux) %}
-          ip_address.@addr6.not_nil!.__in6_u.__u6_addr8.to_slice.copy_to @buffer[4, 16]
+          addr6.not_nil!.__in6_u.__u6_addr8.to_slice.copy_to @buffer[4, 16]
         {% else %}
           {% raise "Unsupported platform" %}
         {% end %}
